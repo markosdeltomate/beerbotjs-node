@@ -1,13 +1,27 @@
-import socketIo  from 'socket.io-client';
-import settings  from './settings';
+import io from 'socket.io-client';
+import Auth from './authorization';
+import settings from './settings';
 
-// get connection data from settings.
-let io = socketIo.connect('http://localhost:24772', {
-    query: 'token=' + "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyTmFtZSI6Ik1hcmtvcyIsImVtYWlsIjoibWFya29zdEBnbWFpbC5jb20iLCJpZCI6IjEyMzQ1IiwiaWF0IjoxNDU3MDQxNjQwLCJleHAiOjE0NTcwNDE5NDB9.B4xoRMyABFVOfcFkrUgBRWZNqekW0vJhAOZh5Jmnbgs"
-});
 
-io.on('connect', function () {
-    console.log('authenticated');
-}).on('disconnect', function () {
-    console.log('disconnected');
+Auth.login((sessionToken) => {
+    let extraHeaders = {
+            extraHeaders: {
+                Authorization: `Bearer ${sessionToken}`
+            }
+        },
+        socket = io.connect(
+            `http://${settings.host}:${settings.port}`,
+            extraHeaders);
+    socket.on('connect', () => {
+        //console.log(socket);
+        //console.log(io);
+    }).on('authenticated', (data) => {
+        console.log('authenticated', data);
+        socket.emit('stream-start', {'stream': 'bla'});
+    }).on('disconnect', (reason) => {
+        console.log('Discconect ', reason);
+    });
+
+
+
 });

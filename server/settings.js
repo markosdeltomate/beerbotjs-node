@@ -1,6 +1,10 @@
 let settings = {
-    host: 'bot',
-    port: '8335',
-    jwtSecret: 'thisIsMySecretAndWillNeverBeYours'
+    host: 'localhost',
+    port: '24772',
+    appSecret: 'thisIsMineAndWillNeverBeYours',
+    appID: '',
+    authToken: ''
 };
-export { settings as default };
+export {
+    settings as default
+};
