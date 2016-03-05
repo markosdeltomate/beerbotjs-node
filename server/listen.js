@@ -4,6 +4,7 @@ import Socket from 'socket.io';
 import jwt from 'jsonwebtoken';
 import settings from './settings';
 import Auth from './authorization';
+import clientConf from './clientConf';
 
 let app = express(),
     server = http.createServer(app),
@@ -31,14 +32,17 @@ io.sockets
         });
 
         socket.on('data', (data) => {
-            console.log(`Sensor ${data.sensor.name} register temp ${data.sensor.celcius}°C`);
+            //console.log(`Sensor ${data.sensor.name} register temp ${data.sensor.celcius}°C`);
+            console.log(data);
             if (data.relay) {
-                console.log(`and the relay ${data.relay.name} is ` + (data.relay.isOn)?'on':'off');
+                let relay = (data.relay.isOn)?'on':'off';
+                console.log(`and the relay ${data.relay.name} is ${relay}`);
             }
         });
         if (decoded) {
             console.log('Authenticated: ', decoded.email);
-            socket.emit('authenticated', {'config': 'blabla'});
+            socket.emit('authenticated');
+            socket.emit('configSent', clientConf);
         } else {
             console.log('authentication failed ');
             socket.emit('disconnect');
@@ -46,6 +50,6 @@ io.sockets
 
     });
 
-server.listen(24772, () => {
+server.listen(24772, '192.168.1.209', () => {
     console.log('listening on *:24772');
 });
