@@ -17,7 +17,8 @@
     Where <username> is your user name in Ubuntu, /dev/ttyACM0 is the detected device of your Arduino board.
 
 3. Configure your app:
-    - add secret, appid in server/settings.js
+    - using example file: conf/app.conf.example.json
+    - create conf/app.conf.json and edit secret, appid, etc
 
 
 ## Testing

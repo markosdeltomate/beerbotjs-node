@@ -1,10 +1,4 @@
-let settings = {
-    host: 'localhost',
-    port: '24772',
-    appSecret: 'thisIsMineAndWillNeverBeYours',
-    appID: '',
-    authToken: ''
-};
+let settings = ;
 export {
     settings as default
 };

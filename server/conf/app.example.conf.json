@@ -1,0 +1,8 @@
+{
+  "host": "localhost",
+  "port": "24772",
+  "protocol": "http",
+  "appSecret": "thisIsMineAndWillNeverBeYours",
+  "appID": "",
+  "authToken": ""
+}
