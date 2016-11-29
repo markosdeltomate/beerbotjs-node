@@ -2,17 +2,20 @@ let clientConf = {
     relays: [
         {
             _id: '56d9001d0ad75ff2121810d5',
-            name: 'Freezer',
-            pin: '10',
-            type: 'NO'
-        },
-        {
-            _id: '56d900290ad75ff2121810d6',
-            name: 'Calentador',
-            pin: '11',
-            type: 'NO'
+            name: 'Freezer Relay #1',
+            cool: {
+                pin: '5',
+                type: 'NO'
+            },
+            heat:{
+                pin: '6',
+                type: 'NO'
+            }
         }
     ],
+    screen: {
+        pins: [7, 8, 9, 10, 11, 12]
+    },
     sensors: [
         {
             _id: '56d8fff50ad75ff2121810d3',
@@ -31,60 +34,33 @@ let clientConf = {
             freq: 1000*10
         }
     ],
-    tasks: [
+    profiles: [
+
         {
+            '_id': '8769870twerer780370',
             name: 'Registro Freezer',
-            type: 'log',
             sensor: {
                 name: 'Freezer',
                 _id: '56d8fff50ad75ff2121810d3'
             },
-            logOnly: true,
-            alerts: {
-                im: 0,
-                email: 1,
-                visual: 0
-            }
+            logOnly: true
         },
         {
-            name: 'Enfriar',
-            type: 'Low',
+            '_id': '5363456345635635645',
+            name: 'Freezer 1',
             sensor: {
                 name: 'Fermentador',
                 _id: '56d900030ad75ff2121810d4'
             },
-            relay: {
-                name: 'Freezer',
+            relays: {
+                name: 'Freezer Relay #1',
                 _id: '56d9001d0ad75ff2121810d5'
             },
-            on: 20,
-            off: 18,
-            logOnly: false,
-            alerts: {
-                im: 0,
-                email: 0,
-                visual: 1
-            }
-        },
-        {
-            name: 'Calentar',
-            type: 'High',
-            sensor: {
-                name: 'Fermentador',
-                _id: '56d900030ad75ff2121810d4'
-            },
-            relay: {
-                name: 'Calentador',
-                _id: '56d900290ad75ff2121810d6'
-            },
-            on: 16,
-            off: 18,
-            logOnly: false,
-            alerts: {
-                im: 0,
-                email: 0,
-                visual: 1
-            }
+            target: 18.0,
+            diff: 1.5,
+            compressorWait: 10 * 60 * 1000,
+            //tempOffset: 0,
+            logOnly: false
         }
     ]
 };

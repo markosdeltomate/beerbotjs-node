@@ -34,10 +34,10 @@ io.sockets
         socket.on('data', (data) => {
             //console.log(`Sensor ${data.sensor.name} register temp ${data.sensor.celcius}°C`);
             console.log(data);
-            if (data.relay) {
+            /*if (data.relay) {
                 let relay = (data.relay.isOn)?'on':'off';
                 console.log(`and the relay ${data.relay.name} is ${relay}`);
-            }
+            }*/
         });
         if (decoded) {
             console.log('Authenticated: ', decoded.email);
@@ -50,6 +50,6 @@ io.sockets
 
     });
 
-server.listen(24772, '192.168.1.209', () => {
-    console.log('listening on *:24772');
+server.listen(24772, () => {
+    console.log('listening on 24772');
 });
