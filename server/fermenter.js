@@ -27,7 +27,7 @@ export default class Fermenter extends Robot {
     }
     getProfilesSync() {
         return new Promise((resolve) => {
-            resolve(require('./robotConf'));
+            resolve(require('./robotProfiles'));
         });
     }
     getProfilesAsync() {
@@ -85,6 +85,15 @@ export default class Fermenter extends Robot {
                 let statusChange = this.checkTemperature(reading.temp, target, tolerance, relays, lastRun, wait);
                 if (statusChange.status === profileStatus.COOLER_OFF) {
                     lastRun = new Date().getTime();
+                }
+
+                //flow is hardcoded to work only with cooling stage right now.
+                if ( relays.flow) {
+                    if (statusChange.status === profileStatus.HEATER_ON) {
+                        relays.flow.on();
+                    } else if (statusChange.status === profileStatus.HEATER_OFF){
+                        relays.flow.off();
+                    }
                 }
                 reading.status = statusChange.status;
             } else {
