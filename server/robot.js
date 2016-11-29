@@ -1,212 +1,136 @@
 import five from 'johnny-five';
-import _ from 'lodash';
-//let boardConfig = {};
+import EventEmitter from 'events';
+import deviceTypes from './deviceTypes';
 
-export default class Robot {
-    constructor(sockets) {
-        this.sockets = sockets;
-        this.board = new five.Board();
+const AUTO_INIT_DEVICES = [
+    'sensors',
+    'relays'
+];
+export default class Robot extends EventEmitter {
+    constructor(socket) {
+        super();
+        this.five = five;
+        this.socket = socket;
+        this.board = null;
         this.sensors = {};
-        this.screen = {};
         this.relays = {};
-        this.displayQueue = [];
-        this.sockets.on('configSent', (config) => {
-            this.init(config);
+        if (process.env.REMOTE_CONFIG) {
+            this.sockets.on('configSent', (config) => {
+                this.init(config);
+            });
+        } else {
+            this.init(require('./robotConf'));
+        }
+    }
+    getBoard() {
+        return new Promise((resolve, reject) => {
+            this.on('BOARD_READY', () => {
+                resolve(this.board);
+            });
+            const rejectTimeout = () => {
+                if (!this.board) {
+                    throw new Error('BOARD: The board took to much time to initialize.');
+                    reject(null);
+                }
+            };
+
+            //wait 30 secs before rejecting the promise
+            setTimeOut(rejectTimeout, 30000);
         });
-        // more Socket triggered actions here
     }
 
-    init(boardConfig) {
+    init(config) {
+        if (!config) {
+            throw new Error('INIT: Cannot create a board without config');
+        }
+        if (this.board === null) {
+            this.board = new this.five.Board(config.boardConf || undefined);
+        }
+        this.config = config;
+
         this.board.on('ready', () => {
-            this.addSensors(boardConfig.sensors);
-
-            if (boardConfig.relays) {
-                this.addRelays(boardConfig.relays);
-            }
-
-            if (boardConfig.screen && boardConfig.screen.pins) {
-                console.log('setting up screen');
-                this.addScreen(boardConfig.screen);
-            }
-
-            this.addProfile(boardConfig.profiles);
+            AUTO_INIT_DEVICES.forEach(deviceType => {
+                const devices = config[deviceType];
+                if (devices && devices.length > 0) {
+                    devices.forEach(device => {
+                        this[deviceType][device.name] = this.addDevice(device);
+                    });
+                }
+            });
+            this.emit('BOARD_READY');
         });
     }
 
-    addScreen(screen) {
-        let config = {
-            pins: screen.pins
+    addDevice(device) {
+        let deviceObj;
+        switch(device.type) {
+            case deviceTypes.ANALOG:
+                deviceObj = this.analog(device.config);
+                break;
+            case deviceTypes.DIGITAL:
+                deviceObj = this.digital(device.config);
+                break;
+            case deviceTypes.I2C:
+                deviceObj = this.i2c_sensor(device.config);
+                break;
+            case deviceTypes.RELAY:
+                deviceObj = this.relay(device.config);
+                break;
+            default:
+                throw new Error('ADD_SENSOR: cannot create a sensor without type');
+        }
+        return deviceObj;
+    }
+
+    digital(config) {
+        if (!config.pin) {
+            throw new Error('SENSOR_DIGITAL_CONFIG: Cannot create a sensor without a Pin');
+        }
+        return new this.five.Sensor.Digital(config);
+    }
+    analog(config) {
+        if (!config.pin) {
+            throw new Error('SENSOR_ANALOG_CONFIG: Cannot create a sensor without a Pin');
+        }
+        return new this.five.Sensor(config);
+    }
+    i2c_sensor(config) {
+        if (!config.address) {
+            throw new Error('SENSOR_I2C_CONFIG: Cannot create an i2c sensor without an address');
+        }
+        if (!config.bytes) {
+            throw new Error('SENSOR_I2C_CONFIG: Cannot create an i2c sensor without the amount of bytes to read');
+        }
+        const ADDRESS = config.address,
+            BYTES = config.bytes,
+            FREQ = config.freq || 1000;
+
+        let sensorObj = {
+            on: (event, handler) => {
+                //TODO: add some logic to handle difference between onData and onChange events.
+                this.board.loop(FREQ, () => {
+                    this.board.i2cReadOnce(ADDRESS, BYTES, (bytes) => {
+                        let result = [];
+
+                        for (let i = 0; i < bytes.length; i = i + 2) {
+                            result.push(five.Fn.int16(bytes[i], bytes[i + 1])/100);
+                        }
+                        sensorObj.value = result;
+                        handler();
+                    });
+                });
+            },
+            value: null
         };
 
-        if (screen.backlight) {
-            config.backlight = screen.backlight;
-        }
-        if (screen.rows) {
-            config.rows = screen.rows;
-        }
-        if (screen.cols) {
-            config.cols = screen.cols;
-        }
+        this.board.i2cConfig(ADDRESS);
 
-        this.screen = new five.LCD(config);
-        this.screen.on();
-        this.screen.clear().print("BeerBot v0.1");
-        this.screen.cursor(1,0).print("Hello hooman...");
+        return sensorObj;
     }
-
-    displayTemp(current = 0) {
-        let last = this.displayQueue.length,
-            next = current + 1,
-            currentItem = this.displayQueue[current],
-            name = currentItem.name,
-            relayState = '',
-            temp;
-        next = (next === last) ? 0 : next;
-        this.screen.useChar("check");
-        this.screen.clear().print(name);
-        this.screen.cursor(1, 0);
-        temp = currentItem.sensor.C.toFixed(1);
-        if (currentItem.relays && currentItem.relays.cool.isOn) {
-            relayState = "- cooling";
-        } else if (currentItem.relays && currentItem.relays.heat.isOn) {
-            relayState = "- heating";
+    relay(config) {
+        if (!config.pin) {
+            throw new Error('RELAY_CONFIG: Cannot create a relay without a Pin');
         }
-        this.screen.print(`${temp} ${relayState}`);
-
-        setTimeout(() => {
-            this.displayTemp(next);
-        }, 3000);
-    }
-
-    addRelays(relays) {
-        relays.forEach((relay) => {
-            let config = {
-                cool: {
-                    pin: relay.cool.pin,
-                        type: relay.cool.type
-                },
-                heat: {
-                    pin: relay.heat.pin,
-                    type: relay.heat.type
-                }
-            };
-
-            this.relays[relay._id] = {
-                cool: new five.Relay(config.cool),
-                heat: new five.Relay(config.heat)
-            };
-        });
-    }
-
-    addSensors(sensors) {
-        sensors.forEach((sensor) => {
-            let config = {
-                controller: sensor.controller,
-                pin: sensor.pin,
-                freq: sensor.freq
-            };
-            if (sensor.address) {
-                config.address = sensor.address;
-            }
-            this.sensors[sensor._id] = new five.Thermometer(config);
-        });
-    }
-
-    addProfile(profiles) {
-        profiles.forEach((profile) => {
-            let parent = this,
-                sensor = this.sensors[profile.sensor._id],
-                logOnly = !!profile.logOnly,
-                relays;
-
-            if (!logOnly && profile.relays) {
-                relays = this.relays[profile.relays._id];
-            }
-
-            this.displayQueue.push({
-                name: profile.sensor.name,
-                sensor: sensor,
-                relays: relays
-            });
-            // no arrow function  or method from Robot class
-            // to avoid messing with 'this' binding by Johnny-five
-            sensor.on('data', function readData() {
-                let currentTemp = this.C,
-                    response = {
-                        stats: {
-                            profile: profile,
-                            temp: +currentTemp.toFixed(1)
-                        }
-                    };
-
-                if (!logOnly) {
-                    console.log(`${currentTemp.toFixed(2)}`);
-                    let statusChange = parent.checkTemp(currentTemp, profile.target, profile.diff, relays);
-                    if (statusChange) {
-                        response.stats = statusChange;
-                    }
-                }
-                parent.sockets.emit('data', response);
-            });
-        });
-        this.displayTemp();
-    }
-
-    checkTemp(temperature, target, diff, relays) {
-        let alert;
-        if (relays && (!relays.heat.isOn && !relays.cool.isOn) &&
-            (((target - diff) < temperature) && (temperature < (target + diff)))) {
-            return false;
-        }
-        //TODO: Add support for compressor waiting time.
-        alert = this.checksForCooler(temperature, target, diff, relays) || this.checksForHeater(temperature, target, diff, relays);
-
-        // we shouldn't be falling in this scenario, so we notify the server and exit with an alert
-        if (relays.heat.isOn && relays.cool.isOn) {
-            relays.cool.off();
-            relays.heat.off();
-            setTimeout(() => {
-                throw "The cooler and heater were turned on simultaneously, check your temp ranges and your sensor readings.";
-            }, 1500);
-            return {error: 1};
-        }
-        return alert;
-    }
-
-    checksForCooler(temperature, target, diff, relays){
-        let alert = false;
-        // if the temperature is higher than my target plus offset and is not already cooling.
-        if (temperature >= (target + diff) && !relays.cool.isOn) {
-            // turn cooller on
-            alert = {cool: 1};
-            relays.cool.on();
-        }
-        // if the temperature reaches our target and the cooler is on.
-        if (temperature <= target && relays.cool.isOn) {
-            // turn cooller off
-            alert = {cool: 0};
-            relays.cool.off();
-        }
-
-        return alert;
-    }
-
-    checksForHeater(temperature, target, diff, relays) {
-        let alert = false;
-        // if the temperature is lower than my target minus offset and is not already heating.
-        if (temperature <= (target - diff) && !relays.heat.isOn) {
-            // turn heater on
-            alert = {heat: 1};
-            relays.heat.on();
-        }
-
-        // if the temperature reaches our target and the heater is on.
-        if (temperature >= target && relays.heat.isOn) {
-            // turn heater off
-            alert = {heat: 0};
-            relays.heat.off();
-        }
-
-        return alert;
+        return new this.five.Relay(config);
     }
 }
