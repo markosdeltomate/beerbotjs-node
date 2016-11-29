@@ -79,7 +79,7 @@ export default class Fermenter extends Robot {
             let reading = {
                 time: new Date().getTime(),
                 profile: profileName,
-                temp: +sensor.value
+                value: +sensor.value
             };
             if (!logOnly) {
                 let statusChange = this.checkTemperature(reading.temp, target, tolerance, relays, lastRun, wait);
@@ -99,7 +99,7 @@ export default class Fermenter extends Robot {
             } else {
                 //check for special devices to perform log only actions. IE: an hygrometer for environment temperature.
                 if (sensor.humidity) {
-                    reading.humidity = sensor.humidity;
+                    reading.humidity = true;
                 }
             }
 

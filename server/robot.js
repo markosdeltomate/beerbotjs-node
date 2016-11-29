@@ -1,5 +1,7 @@
 import five from 'johnny-five';
 import EventEmitter from 'events';
+
+import Sensor from './miniSensor';
 import deviceTypes from './deviceTypes';
 
 const AUTO_INIT_DEVICES = [
@@ -53,7 +55,11 @@ export default class Robot extends EventEmitter {
                 const devices = config[deviceType];
                 if (devices && devices.length > 0) {
                     devices.forEach(device => {
-                        this[deviceType][device.name] = this.addDevice(device);
+                        if (deviceTypes.I2C && device.isMultiDevice) {
+                            this.addMultiDevice(device, deviceType);
+                        } else {
+                            this[deviceType][device.name] = this.addDevice(device);
+                        }
                     });
                 }
             });
@@ -94,6 +100,40 @@ export default class Robot extends EventEmitter {
         }
         return new this.five.Sensor(config);
     }
+    addMultiDevice(config, deviceType) {
+        if (!config.address) {
+            throw new Error('MULTI_SENSOR_I2C_CONFIG: Cannot create an i2c sensor without an address');
+        }
+        if (!config.bytes) {
+            throw new Error('MULTI_SENSOR_I2C_CONFIG: Cannot create an i2c sensor without the amount of bytes to read');
+        }
+        if (config.devices.length > 0) {
+            throw new Error('MULTI_SENSOR_I2C_CONFIG: Cannot create a multi i2c sensor without any devices');
+        }
+        const {address: ADDRESS, bytes: BYTES, freq: FREQ = 1000} = config;
+        let pseudoSensors = [];
+
+        config.devices.forEach(device => {
+            let sensor = new Sensor(device);
+            pseudoSensors.push(sensor);
+            this[deviceType][device.name] = sensor;
+        });
+
+        this.board.i2cConfig(ADDRESS);
+
+        this.board.loop(FREQ, () => {
+            this.board.i2cReadOnce(ADDRESS, BYTES, (bytes) => {
+                let currentSensor = 0;
+                for (let i = 0; i < bytes.length; i = i + 2) {
+                    //todo: handle more than 2 bytes per reading/sensor
+                    let reading = five.Fn.int16(bytes[i], bytes[i + 1])/100;
+                    pseudoSensors[currentSensor].emit('reading', reading);
+                    currentSensor++;
+                }
+            });
+        });
+    }
+
     i2c_sensor(config) {
         if (!config.address) {
             throw new Error('SENSOR_I2C_CONFIG: Cannot create an i2c sensor without an address');
@@ -101,31 +141,23 @@ export default class Robot extends EventEmitter {
         if (!config.bytes) {
             throw new Error('SENSOR_I2C_CONFIG: Cannot create an i2c sensor without the amount of bytes to read');
         }
-        const ADDRESS = config.address,
-            BYTES = config.bytes,
-            FREQ = config.freq || 1000;
+        //TODO do something with the shape to handle non multisensors device via i2c
 
-        let sensorObj = {
-            on: (event, handler) => {
-                //TODO: add some logic to handle difference between onData and onChange events.
-                this.board.loop(FREQ, () => {
-                    this.board.i2cReadOnce(ADDRESS, BYTES, (bytes) => {
-                        let result = [];
+        const {address: ADDRESS, bytes: BYTES, freq: FREQ = 1000} = config;
 
-                        for (let i = 0; i < bytes.length; i = i + 2) {
-                            result.push(five.Fn.int16(bytes[i], bytes[i + 1])/100);
-                        }
-                        sensorObj.value = result;
-                        handler();
-                    });
-                });
-            },
-            value: null
-        };
-
+        let sensor = new Sensor(config);
         this.board.i2cConfig(ADDRESS);
+        this.board.loop(FREQ, () => {
+            this.board.i2cReadOnce(ADDRESS, BYTES, (bytes) => {
+                let reading = [];
+                for (let i = 0; i < bytes.length; i = i + 2) {
+                    reading.push(five.Fn.int16(bytes[i], bytes[i + 1])/100);
+                }
+                sensor.emit('reading', reading);
+            });
+        });
 
-        return sensorObj;
+        return sensor;
     }
     relay(config) {
         if (!config.pin) {
