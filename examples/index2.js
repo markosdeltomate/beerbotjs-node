@@ -1,9 +1,8 @@
 import socketIo  from 'socket.io-client';
-import settings  from './settings';
 
 // get connection data from settings.
-let io = socketIo.connect(settings.host, {
-    port: settings.port
+let io = socketIo.connect(process.env.HOST, {
+    port: process.env.PORT
 });
 
 let stopStreaming = () => {

@@ -1,15 +1,6 @@
 import Robot from './robot';
 
-const profileStatus = {
-    IN_RANGE: 'IN_RANGE',
-    COOLER_ON: 'COOLER_ON',
-    COOLING: 'COOLING',
-    COOLER_OFF: 'COOLER_OFF',
-    HEATER_ON: 'HEATER_ON',
-    HEATING: 'HEATING',
-    HEATER_OFF: 'HEATER_OFF',
-    WAITING_FOR_COMPRESSOR: 'WAITING_FOR_COMPRESSOR'
-};
+import profileStatus from './constants/profileStatus';
 
 export default class Fermenter extends Robot {
     constructor(socket) {
@@ -27,7 +18,7 @@ export default class Fermenter extends Robot {
     }
     getProfilesSync() {
         return new Promise((resolve) => {
-            resolve(require('./robotProfiles'));
+            resolve(require('./conf/robotProfiles'));
         });
     }
     getProfilesAsync() {
@@ -198,5 +189,3 @@ export default class Fermenter extends Robot {
         return status;
     }
 }
-
-let fermenter = new Fermenter(null);

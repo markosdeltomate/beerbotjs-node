@@ -1,11 +1,9 @@
-var request = require('request');
-import settings from './settings';
+import request from 'request';
 import jwt from 'jsonwebtoken';
 
-
 let postBody = {
-        'AppId': settings.appID,
-        'AuthToken': settings.authToken
+        'AppId': process.env.APP_ID,
+        'AuthToken': process.env.AUTH_TOKEN
     },
     sessionToken,
     Auth;
@@ -13,7 +11,7 @@ let postBody = {
 Auth = {
     login: (cb) => {
         request.post(
-            `http://${settings.host}:${settings.port}/login`,
+            `http://${process.env.HOST}:${process.env.PORT}/login`,
             postBody,
             (error, response, body) => {
                 if (!error && response.statusCode === 200) {
@@ -31,15 +29,15 @@ Auth = {
     },
     validateToken: (token) => {
         try {
-            return jwt.verify(token, settings.appSecret);
+            return jwt.verify(token, process.env.APP_SECRET);
         } catch (err) {
             console.log('JWT validation error:', err.message);
             return false;
         }
     },
     fail: () => {
-        console.log('Couldn\'t log in with credentials for ' + settings.AppID);
+        console.log('Couldn\'t log in with credentials for ' + process.env.APP_ID);
     }
 };
 
-export {Auth as default};
+export default Auth;

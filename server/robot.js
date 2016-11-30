@@ -2,7 +2,7 @@ import five from 'johnny-five';
 import EventEmitter from 'events';
 
 import Sensor from './miniSensor';
-import deviceTypes from './deviceTypes';
+import deviceTypes from './constants/deviceTypes';
 
 const AUTO_INIT_DEVICES = [
     'sensors',
@@ -21,7 +21,7 @@ export default class Robot extends EventEmitter {
                 this.init(config);
             });
         } else {
-            this.init(require('./robotConf'));
+            this.init(require('./conf/devicesConf'));
         }
     }
     getBoard() {

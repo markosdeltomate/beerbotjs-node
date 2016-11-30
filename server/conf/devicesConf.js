@@ -1,4 +1,4 @@
-import deviceTypes from './deviceTypes';
+import deviceTypes from '../constants/deviceTypes';
 
 const robotConf = {
     sensors: [
