@@ -37,7 +37,7 @@ export default class Robot extends EventEmitter {
             };
 
             //wait 30 secs before rejecting the promise
-            setTimeOut(rejectTimeout, 30000);
+            setTimeout(rejectTimeout, 30000);
         });
     }
 
@@ -71,16 +71,16 @@ export default class Robot extends EventEmitter {
         let deviceObj;
         switch(device.type) {
             case deviceTypes.ANALOG:
-                deviceObj = this.analog(device.config);
+                deviceObj = this.analog(device);
                 break;
             case deviceTypes.DIGITAL:
-                deviceObj = this.digital(device.config);
+                deviceObj = this.digital(device);
                 break;
             case deviceTypes.I2C:
-                deviceObj = this.i2c_sensor(device.config);
+                deviceObj = this.i2c_sensor(device);
                 break;
             case deviceTypes.RELAY:
-                deviceObj = this.relay(device.config);
+                deviceObj = this.relay(device);
                 break;
             default:
                 throw new Error('ADD_SENSOR: cannot create a sensor without type');
@@ -107,7 +107,7 @@ export default class Robot extends EventEmitter {
         if (!config.bytes) {
             throw new Error('MULTI_SENSOR_I2C_CONFIG: Cannot create an i2c sensor without the amount of bytes to read');
         }
-        if (config.devices.length > 0) {
+        if (!config.devices || config.devices.length === 0) {
             throw new Error('MULTI_SENSOR_I2C_CONFIG: Cannot create a multi i2c sensor without any devices');
         }
         const {address: ADDRESS, bytes: BYTES, freq: FREQ = 1000} = config;

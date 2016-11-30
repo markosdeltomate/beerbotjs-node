@@ -44,7 +44,7 @@ export default class Fermenter extends Robot {
             };
 
             //wait 30 secs before rejecting the promise
-            setTimeOut(rejectTimeout, 30000);
+            setTimeout(rejectTimeout, 30000);
         });
     }
     addProfiles([profiles, board]) {
@@ -56,7 +56,7 @@ export default class Fermenter extends Robot {
         }
         profiles.forEach(profile => this.addProfile(profile));
     }
-    addProfile({profile: profileName, sensor: sensorName, relays: profileRelays = [], target = null, tolerance = null, wait = null, logOnly = true}) {
+    addProfile({name: profileName, sensor: sensorName, relays: profileRelays = [], target = null, tolerance = null, wait = null, logOnly = true}) {
         if (!profileName) {
             throw new Error('ADD_PROFILE: A profile needs a name.');
         }
@@ -65,7 +65,7 @@ export default class Fermenter extends Robot {
         }
         let sensor = this.sensors[sensorName],
             relays = {},
-            lastRun = new Date().getTime();
+            lastRun = null;
 
 
         if (!logOnly && profileRelays.length > 0) {
@@ -79,7 +79,7 @@ export default class Fermenter extends Robot {
             let reading = {
                 time: new Date().getTime(),
                 profile: profileName,
-                value: +sensor.value
+                value: sensor.value
             };
             if (!logOnly) {
                 let statusChange = this.checkTemperature(reading.temp, target, tolerance, relays, lastRun, wait);
@@ -103,7 +103,8 @@ export default class Fermenter extends Robot {
                 }
             }
 
-            this.socket.emit('data', reading);
+            //this.socket.emit('data', reading);
+            console.log(reading);
         });
     }
 
@@ -112,6 +113,9 @@ export default class Fermenter extends Robot {
             tempIsLow,
             tempIsHigh,
             status;
+        if (lastRun === null) { // startup, we need to wait in case the compressor just turn off
+            return {status: profileStatus.COOLER_OFF};
+        }
         if (relays && (!relays.heater.isOn && !relays.cooler.isOn) &&
             (((target - tolerance) < temperature) && (temperature < (target + tolerance)))) {
             return {status: profileStatus.IN_RANGE};

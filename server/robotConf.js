@@ -34,12 +34,12 @@ const robotConf = {
         {
             name: 'Cooler',
             type: deviceTypes.RELAY,
-            pin: 12
+            pin: 7
         },
         {
             name: 'Heater',
             type: deviceTypes.RELAY,
-            pin: 13
+            pin: 8
         }
     ]
 };

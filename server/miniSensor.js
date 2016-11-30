@@ -5,12 +5,14 @@ export default class Sensor extends EventEmitter {
         super();
         this.device = device;
         this.realValue = 0;
-        let params = this.device.params;
+        if (this.device.params && this.device.params.length > 0) {
+            let params = this.device.params;
 
-        Object.keys(params).forEach(key => {
-            //TODO: create blacklist to check key is not compromising security
-            this[key] = params[key];
-        });
+            Object.keys(params).forEach(key => {
+                //TODO: create blacklist to check key is not compromising security
+                this[key] = params[key];
+            });
+        }
 
         this.on('reading', this.doReading)
     }
@@ -24,9 +26,11 @@ export default class Sensor extends EventEmitter {
     }
 
     set value(value) {
-        this.aliases.forEach(alias => {
-            this[alias] = value;
-        });
+        if (this.aliases && this.aliases.length > 0) {
+            this.aliases.forEach(alias => {
+                this[alias] = value;
+            });
+        }
         this.realValue = value;
     }
 
