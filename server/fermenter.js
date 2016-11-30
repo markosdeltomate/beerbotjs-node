@@ -82,7 +82,7 @@ export default class Fermenter extends Robot {
                 value: sensor.value
             };
             if (!logOnly) {
-                let statusChange = this.checkTemperature(reading.temp, target, tolerance, relays, lastRun, wait);
+                let statusChange = this.checkTemperature(reading.value, target, tolerance, relays, lastRun, wait);
                 if (statusChange.status === profileStatus.COOLER_OFF) {
                     lastRun = new Date().getTime();
                 }
@@ -103,8 +103,7 @@ export default class Fermenter extends Robot {
                 }
             }
 
-            //this.socket.emit('data', reading);
-            console.log(reading);
+            this.socket.emit('data', reading);
         });
     }
 

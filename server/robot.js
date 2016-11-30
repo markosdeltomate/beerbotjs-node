@@ -110,7 +110,7 @@ export default class Robot extends EventEmitter {
         if (!config.devices || config.devices.length === 0) {
             throw new Error('MULTI_SENSOR_I2C_CONFIG: Cannot create a multi i2c sensor without any devices');
         }
-        const {address: ADDRESS, bytes: BYTES, freq: FREQ = 1000} = config;
+        const {address: ADDRESS, bytes: BYTES, freq: FREQ = 30000} = config;
         let pseudoSensors = [];
 
         config.devices.forEach(device => {
