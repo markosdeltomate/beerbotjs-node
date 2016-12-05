@@ -5,14 +5,14 @@ import profileStatus from './constants/profileStatus';
 export default class Fermenter extends Robot {
     constructor(config, profiles) {
         super();
-
         this.setup(config)
             .getBoard()
-            .then(this.addProfiles.bind(this, profiles));
-
+            .then(board => {
+                this.addProfiles(board, profiles)
+            });
     }
 
-    addProfiles(profiles, board) {
+    addProfiles(board, profiles) {
         if (!profiles || profiles.length === 0) {
             throw new Error('ADD_PROFILES: There are no profiles to add.');
         }
@@ -31,7 +31,6 @@ export default class Fermenter extends Robot {
         let sensor = this.sensors[sensorName],
             relays = {},
             lastRun = null;
-
 
         if (!logOnly && profileRelays.length > 0) {
             profileRelays.forEach(relay => {
@@ -67,9 +66,16 @@ export default class Fermenter extends Robot {
                     reading.humidity = true;
                 }
             }
+            console.log(`Reading from: ${sensorName}`);
 
-            this.socket.emit('data', reading);
+            this.emit('data', reading);
         });
+        console.log(`${sensorName} added`);
+    }
+    onData(cb) {
+        this.on('data', (data) =>{
+            cb(data);
+        })
     }
 
     checkTemperature(temperature, target, tolerance, relays, lastRun, wait) {

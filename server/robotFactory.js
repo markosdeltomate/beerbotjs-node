@@ -1,4 +1,4 @@
-export default class AsyncRobot{
+export default class RobotFactory{
     constructor() {
         this._instance = null;
         this._config = null;
@@ -8,12 +8,12 @@ export default class AsyncRobot{
             config: false,
             profiles: false
         };
-        this.defferConfig();
-        this.defferProfiles();
+        this.config = this.defferConfig();
+        this.profiles = this.defferProfiles();
 
     }
     defferConfig() {
-        let deferredConfig = new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             this._config = {
                 resolve,
                 reject
@@ -25,13 +25,13 @@ export default class AsyncRobot{
                 }
             };
 
-            //wait 60 secs before rejecting the promise
-            setTimeout(rejectTimeout, 60000);
+            //wait 45 secs before rejecting the promise
+            setTimeout(rejectTimeout, 45000);
         });
     }
 
     defferProfiles() {
-        let deferredProfiles = new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             this._profiles = {
                 resolve,
                 reject
@@ -43,27 +43,29 @@ export default class AsyncRobot{
                 }
             };
 
-            //wait 60 secs before rejecting the promise
-            setTimeout(rejectTimeout, 60000);
+            //wait 45 secs before rejecting the promise
+            setTimeout(rejectTimeout, 45000);
         });
     }
-    static setConfig(config) {
+    setConfig(config) {
+        //console.log('setConfig', config);
         this._resolved.config = true;
         this._config.resolve(config);
     }
-    static setProfiles(profiles) {
+    setProfiles(profiles) {
+        //console.log('setProfiles', profiles);
         this._resolved.profiles = true;
         this._profiles.resolve(profiles);
     }
-    static getInstance(Robot) {
-        if (!this._instance instanceof Promise) {
+    getInstance(Robot) {
+        if (!(this._instance instanceof Promise)) {
             this._instance = new Promise((resolve, reject) => {
                 Promise
-                    .all([this._config, this._profiles])
-                    .then((config, profiles) => {
+                    .all([this.config, this.profiles])
+                    .then(([config, profiles]) => {
                         this._resolved.all = true;
-                        resolve(new Robot(config, profiles))
-                    });
+                        return resolve(new Robot(config, profiles))
+                    }).catch(console.log.bind(console));
 
                 const rejectTimeout = () => {
                     if (!this._resolved.all) {
@@ -72,8 +74,8 @@ export default class AsyncRobot{
                     }
                 };
 
-                //wait 60 secs before rejecting the promise
-                setTimeout(rejectTimeout, 60000);
+                //wait 45 secs before rejecting the promise
+                setTimeout(rejectTimeout, 45000);
             });
         }
         return this._instance;

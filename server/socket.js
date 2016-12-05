@@ -1,34 +1,37 @@
 import io from 'socket.io-client';
-import AsyncRobot from './asyncRobot';
+import RobotFactory from './robotFactory';
 
 export default class SocketIO {
     constructor(sessionToken, Robot) {
-        super();
         this.socket = null;
         this.extraHeaders = {
             extraHeaders: {
                 Authorization: `Bearer ${sessionToken}`
             }
         };
-        AsyncRobot
-            .getInstance(Robot)
-            .then(instance => {
-                this.robot = instance;
-            });
+        this.robotFactory = new RobotFactory();
+
+        this.robot = this.robotFactory.getInstance(Robot);
         this.connect();
     }
     bindEvents() {
         this.socket
             .on('connect', () => {
-                //console.log(socket);
-                //console.log(io);
+                this.socket.emit('authenticate');
             })
             .on('authenticated', () => {
+                console.log('Authentication is valid.');
+                this.robot.then(robot => {
+                    robot.onData((data) => {
+                        //todo: create a stack to handle data-sent data-received and keep a disconnected cache on !data-received
+                        this.socket.emit('data-sent', data);
+                    });
+                }).catch(console.log.bind(console));
                 if (process.env.REMOTE_CONFIG) {
                     this.socket.emit('config-request');
                 } else {
-                    AsyncRobot.setConfig(require('./conf/devicesConf'));
-                    AsyncRobot.setProfiles(require('./conf/robotProfiles'));
+                    this.robotFactory.setConfig(require('./conf/devicesConf'));
+                    this.robotFactory.setProfiles(require('./conf/robotProfiles'));
                 }
             })
             .on('config-response', (config) => {
@@ -41,7 +44,8 @@ export default class SocketIO {
             .on('disconnect', this.disconnect.bind(this));
     }
     connect() {
-        const uri = `http://${process.env.HOST}${process.env.PORT?':':''}${process.env.PORT}`;
+        const uri = `${process.env.SERVER_URI}`;
+        console.log(`CONNECT: attempting to connect to ${uri}`);
         this.socket = io.connect(uri, this.extraHeaders);
         this.bindEvents();
     }
