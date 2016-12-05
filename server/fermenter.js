@@ -3,42 +3,16 @@ import Robot from './robot';
 import profileStatus from './constants/profileStatus';
 
 export default class Fermenter extends Robot {
-    constructor(socket) {
-        super(socket);
-        let deferredProfiles = (process.env.REMOTE_CONFIG) ?
-            this.getProfilesAsync() :
-            this.getProfilesSync();
+    constructor(config, profiles) {
+        super();
 
-        Promise
-            .all([
-                deferredProfiles,
-                this.getBoard()
-            ]).then(this.addProfiles.bind(this));
+        this.setup(config)
+            .getBoard()
+            .then(this.addProfiles.bind(this, profiles));
 
     }
-    getProfilesSync() {
-        return new Promise((resolve) => {
-            resolve(require('./conf/robotProfiles'));
-        });
-    }
-    getProfilesAsync() {
-        return new Promise((resolve, reject) => {
-            this.socket.on('profilesSent', (profiles) => {
-                resolve(profiles);
-            });
 
-            const rejectTimeout = () => {
-                if (!this.profiles) {
-                    throw new Error('PROFILES: The profiles took to much time to load.');
-                    reject(null);
-                }
-            };
-
-            //wait 30 secs before rejecting the promise
-            setTimeout(rejectTimeout, 30000);
-        });
-    }
-    addProfiles([profiles, board]) {
+    addProfiles(profiles, board) {
         if (!profiles || profiles.length === 0) {
             throw new Error('ADD_PROFILES: There are no profiles to add.');
         }

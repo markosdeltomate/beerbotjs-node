@@ -1,10 +1,19 @@
-import io from 'socket.io-client';
 import Auth from './authorization';
 import Fermenter from './Fermenter';
-
+import IO from './socket';
 let robot;
 
 Auth.login((sessionToken) => {
+
+    let socket = new IO(sessionToken, Fermenter);
+    socket.buildRobot(fermenter).then(() => {
+        robot = fermenter;
+    });
+
+
+
+
+
     let extraHeaders = {
             extraHeaders: {
                 Authorization: `Bearer ${sessionToken}`

@@ -9,20 +9,12 @@ const AUTO_INIT_DEVICES = [
     'relays'
 ];
 export default class Robot extends EventEmitter {
-    constructor(socket) {
+    constructor() {
         super();
         this.five = five;
-        this.socket = socket;
         this.board = null;
         this.sensors = {};
         this.relays = {};
-        if (process.env.REMOTE_CONFIG) {
-            this.sockets.on('configSent', (config) => {
-                this.init(config);
-            });
-        } else {
-            this.init(require('./conf/devicesConf'));
-        }
     }
     getBoard() {
         return new Promise((resolve, reject) => {
@@ -31,8 +23,8 @@ export default class Robot extends EventEmitter {
             });
             const rejectTimeout = () => {
                 if (!this.board) {
-                    throw new Error('BOARD: The board took to much time to initialize.');
                     reject(null);
+                    throw new Error('BOARD: The board took to much time to initialize.');
                 }
             };
 
@@ -40,8 +32,7 @@ export default class Robot extends EventEmitter {
             setTimeout(rejectTimeout, 30000);
         });
     }
-
-    init(config) {
+    setup(config) {
         if (!config) {
             throw new Error('INIT: Cannot create a board without config');
         }
@@ -65,6 +56,7 @@ export default class Robot extends EventEmitter {
             });
             this.emit('BOARD_READY');
         });
+        return this;
     }
 
     addDevice(device) {

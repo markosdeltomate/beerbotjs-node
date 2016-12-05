@@ -2,22 +2,20 @@ import request from 'request';
 import jwt from 'jsonwebtoken';
 
 let postBody = {
-        'AppId': process.env.APP_ID,
-        'AuthToken': process.env.AUTH_TOKEN
+        'appId': process.env.APP_ID,
+        'code': jwt.sign({"_id": process.env.APP_ID, date: new Date().getDate()}, process.env.APP_SECRET)
     },
-    sessionToken,
     Auth;
 
 Auth = {
     login: (cb) => {
         request.post(
-            `http://${process.env.HOST}:${process.env.PORT}/login`,
+            `${process.env.SERVER_URI}/auth`,
             postBody,
             (error, response, body) => {
                 if (!error && response.statusCode === 200) {
-                    body = JSON.parse(body);
-                    sessionToken = body.token;
-                    let payload = Auth.validateToken(sessionToken);
+                    let sessionToken = JSON.parse(body).token,
+                        payload = Auth.validateToken(sessionToken);
                     if (payload) {
                         cb(sessionToken);
                     }

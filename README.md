@@ -27,7 +27,6 @@
     - PORT
     - APP_SECRET
     - APP_ID
-    - AUTH_TOKEN
 
 ## Testing
 
