@@ -1,5 +1,5 @@
 import Auth from './authorization';
-import Fermenter from './Fermenter';
+import Fermenter from './fermenter';
 import IO from './socket';
 let auth = new Auth(); //TODO: I hate this structure, let's move login into IO maybe?
 

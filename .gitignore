@@ -5,3 +5,4 @@ node_modules
 .idea
 conf/app.conf.json
 *.log
+*.env.js
