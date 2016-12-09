@@ -42,6 +42,7 @@ export default class Fermenter extends Robot {
         sensor.on('data', () => {
             let reading = {
                 time: new Date().getTime(),
+                appId: process.env.APP_ID,
                 profile: profileName,
                 value: sensor.value
             };
