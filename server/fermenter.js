@@ -140,7 +140,7 @@ export default class Fermenter extends Robot {
         tempIsLow = this.checkForHeater(temperature, target, tolerance, relays.heater.isOn);
 
         if (tempIsHigh.status != profileStatus.IN_RANGE) {
-            status = tempIsHigh.status;
+            status = tempIsHigh;
             if (tempIsHigh.status === profileStatus.COOLER_OFF) {
                 relays.cooler.off();
             }
@@ -154,7 +154,7 @@ export default class Fermenter extends Robot {
         }
 
         if (tempIsLow.status != profileStatus.IN_RANGE) {
-            status = tempIsLow.status;
+            status = tempIsLow;
             if (tempIsLow.status === profileStatus.HEATER_OFF) {
                 relays.heater.off();
             }
