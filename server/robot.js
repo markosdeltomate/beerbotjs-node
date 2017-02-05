@@ -152,10 +152,10 @@ export default class Robot extends EventEmitter {
 
         return sensor;
     }
-    relay(config) {
-        if (!config.pin) {
+    relay({pin, name}) {
+        if (!pin) {
             throw new Error('RELAY_CONFIG: Cannot create a relay without a Pin');
         }
-        return new this.five.Relay(config);
+        return new this.five.Relay({pin, type: 'NC'});
     }
 }
