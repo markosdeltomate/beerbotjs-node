@@ -8,10 +8,47 @@ export default class Fermenter extends Robot {
         this.setup(config)
             .getBoard()
             .then(board => {
-                this.addProfiles(board, profiles)
+                this.addProfiles(board, profiles);
+                this.addScreen(board);
             });
     }
 
+    addScreen(board) {
+        this.screen = this.five.LCD({
+            pins: [7, 8, 9, 10, 11, 12],
+            backlight: 6,
+            rows: 2,
+            cols: 20
+        });
+        this.screen.clear().print("Fermentobot ON!");
+
+        this.displayQueue = {};
+        /*board.repl.inject({
+            screen: this.screen
+        });*/
+        this.displayInit();
+    }
+    displayInit() {
+        let i = 0;
+        setInterval(() => {
+            let keys = Object.keys(this.displayQueue),
+                key;
+            if (keys.length === 0) {
+                return;
+            }
+            if (i === keys.length) {
+                i = 0;
+            }
+            key = keys[i];
+            this.screen.clear().print(key);
+            this.cursor(1, 0);
+            this.screen.print(this.displayQueue[key]);
+            i++;
+        }, 2000);
+    }
+    updateDisplayQueue(key, value) {
+        this.displayQueue[key] = value;
+    }
     addProfiles(board, profiles) {
         if (!profiles || profiles.length === 0) {
             throw new Error('ADD_PROFILES: There are no profiles to add.');
@@ -63,12 +100,13 @@ export default class Fermenter extends Robot {
                 reading.status = statusChange.status;
             } else {
                 //check for special devices to perform log only actions. IE: an hygrometer for environment temperature.
-                if (sensor.humidity) {
+                if (sensor.device && sensor.device.params && sensor.device.params.humidity) {
                     reading.humidity = true;
                 }
+
             }
             console.log(`Reading from: ${sensorName}`);
-
+            this.updateDisplayQueue(sensorName, sensor.value);
             this.emit('data', reading);
         });
         console.log(`${sensorName} added`);
