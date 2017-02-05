@@ -14,6 +14,7 @@ const robotProfiles = [
         ],
         tolerance: 1.5,
         wait: 1,
+        target: 18,
         logOnly: false
     },
     {

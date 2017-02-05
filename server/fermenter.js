@@ -66,6 +66,7 @@ export default class Fermenter extends Robot {
         if (!sensorName || !this.sensors[sensorName]) {
             throw new Error('ADD_PROFILE: A profile needs a valid sensor.');
         }
+
         let sensor = this.sensors[sensorName],
             relays = {},
             lastRun = null;
@@ -124,14 +125,15 @@ export default class Fermenter extends Robot {
         let now = new Date().getTime(),
             tempIsLow,
             tempIsHigh,
-            status;
-        if (lastRun === null) { // startup, we need to wait in case the compressor just turn off
+            status = {status: profileStatus.IN_RANGE};
 
+        if (lastRun === null) { // startup, we need to wait in case the compressor just turn off
             return {status: profileStatus.COOLER_OFF};
         }
+
         if (relays && (!relays.heater.isOn && !relays.cooler.isOn) &&
             (((target - tolerance) < temperature) && (temperature < (target + tolerance)))) {
-            return {status: profileStatus.IN_RANGE};
+            return status;
         }
 
         tempIsHigh = this.checkForCooler(temperature, target, tolerance, relays.cooler.isOn);
