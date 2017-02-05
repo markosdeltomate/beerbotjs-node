@@ -1,3 +1,4 @@
+import moment from 'moment';
 import Robot from './robot';
 
 import profileStatus from './constants/profileStatus';
@@ -41,10 +42,10 @@ export default class Fermenter extends Robot {
             }
             key = keys[i];
             this.screen.clear().print(key);
-            this.cursor(1, 0);
+            this.screen.cursor(1, 0);
             this.screen.print(this.displayQueue[key]);
             i++;
-        }, 2000);
+        }, 3000);
     }
     updateDisplayQueue(key, value) {
         this.displayQueue[key] = value;
@@ -73,7 +74,6 @@ export default class Fermenter extends Robot {
             profileRelays.forEach(relay => {
                 relays[relay.type] = this.relays[relay.name]; //type: {cooler, heater, flow}
             });
-
         }
 
         sensor.on('data', () => {
@@ -86,7 +86,7 @@ export default class Fermenter extends Robot {
             if (!logOnly) {
                 let statusChange = this.checkTemperature(reading.value, target, tolerance, relays, lastRun, wait);
                 if (statusChange.status === profileStatus.COOLER_OFF) {
-                    lastRun = new Date().getTime();
+                    lastRun = moment();
                 }
 
                 //flow is hardcoded to work only with cooling stage right now.
@@ -105,7 +105,10 @@ export default class Fermenter extends Robot {
                 }
 
             }
-            console.log(`Reading from: ${sensorName}`);
+            console.log(`Reading from: ${sensorName} ${sensor.value}`);
+            if (reading && reading.status) {
+                console.log(`[${reading.status}]`);
+            }
             this.updateDisplayQueue(sensorName, sensor.value);
             this.emit('data', reading);
         });
@@ -123,6 +126,7 @@ export default class Fermenter extends Robot {
             tempIsHigh,
             status;
         if (lastRun === null) { // startup, we need to wait in case the compressor just turn off
+
             return {status: profileStatus.COOLER_OFF};
         }
         if (relays && (!relays.heater.isOn && !relays.cooler.isOn) &&
@@ -138,10 +142,12 @@ export default class Fermenter extends Robot {
             if (tempIsHigh.status === profileStatus.COOLER_OFF) {
                 relays.cooler.off();
             }
-            if (tempIsHigh.status === profileStatus.COOLER_ON && (lastRun + wait) > now) {
-                relays.cooler.on();
-            } else {
-                status = {status: profileStatus.WAITING_FOR_COMPRESSOR};
+            if (tempIsHigh.status === profileStatus.COOLER_ON) {
+                if (!relays.cooler.isOn && (moment(lastRun).add(wait, 'minutes').isBefore(new Date()))) {
+                    relays.cooler.on();
+                } else {
+                    status = {status: profileStatus.WAITING_FOR_COMPRESSOR};
+                }
             }
         }
 

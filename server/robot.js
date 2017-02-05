@@ -73,6 +73,7 @@ export default class Robot extends EventEmitter {
                 break;
             case deviceTypes.RELAY:
                 deviceObj = this.relay(device);
+                deviceObj.off();
                 break;
             default:
                 throw new Error('ADD_SENSOR: cannot create a sensor without type');

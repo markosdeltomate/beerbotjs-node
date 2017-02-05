@@ -13,7 +13,7 @@ const robotProfiles = [
             },
         ],
         tolerance: 1.5,
-        wait: 8 * 60 * 1000,
+        wait: 1,
         logOnly: false
     },
     {

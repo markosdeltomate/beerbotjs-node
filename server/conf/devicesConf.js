@@ -1,9 +1,9 @@
 import deviceTypes from '../constants/deviceTypes';
 
 const robotConf = {
-    /*boardConf: {
+    boardConf: {
         port: 'COM4'
-    },*/
+    },
     sensors: [
         {
             name: 'hygrometer+thermometer',
