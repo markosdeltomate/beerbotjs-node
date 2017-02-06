@@ -30,8 +30,8 @@ export default class SocketIO {
                 if (process.env.REMOTE_CONFIG) {
                     this.socket.emit('config-request');
                 } else {
-                    this.robotFactory.setConfig(require('./conf/devicesConf'));
-                    this.robotFactory.setProfiles(require('./conf/robotProfiles'));
+                    this.robotFactory.setConfig(require('./conf/devicesConf').default);
+                    this.robotFactory.setProfiles(require('./conf/robotProfiles').default);
                 }
             })
             .on('config-response', (config) => {

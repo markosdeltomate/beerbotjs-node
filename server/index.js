@@ -1,3 +1,4 @@
+"use strict";
 import Auth from './authorization';
 import Fermenter from './fermenter';
 import IO from './socket';

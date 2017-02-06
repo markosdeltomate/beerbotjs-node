@@ -45,5 +45,3 @@ export default class Auth {
         console.log('Couldn\'t log in with credentials for ' + process.env.APP_ID);
     }
 }
-
-export default Auth;
